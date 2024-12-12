@@ -15,6 +15,7 @@ from guided_diffusion.script_util import (
     args_to_dict,
     add_dict_to_argparser,
 )
+
 from guided_diffusion.train_util import TrainLoop
 from torch.utils.data import DataLoader
 import torch
@@ -42,10 +43,7 @@ def main():
 
     logger.log("creating data loader...")
 
-    
-    
     val_data = DataLoader(ValDataNew(dataset_path=val_dir), batch_size=1, shuffle=False, num_workers=1) 
-
 
     print(args)
     data = load_sar_data(

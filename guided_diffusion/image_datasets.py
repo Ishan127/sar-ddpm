@@ -12,6 +12,7 @@ import cv2
 import math
 import random
 seed = np.random.RandomState(112311)
+
 def load_data(
     *,
     data_dir,
@@ -83,27 +84,6 @@ def _list_image_files_recursively(data_dir):
         elif bf.isdir(full_path):
             results.extend(_list_image_files_recursively(full_path))
     return results
-
-
-class RandomCrop(object):
-
-    def __init__(self, crop_size=[256,256]):
-        """Set the height and weight before and after cropping"""
-        self.crop_size_h  = crop_size[0]
-        self.crop_size_w  = crop_size[1]
-
-    def __call__(self, inputs, target):
-        input_size_h, input_size_w, _ = inputs.shape
-        try:
-            x_start = random.randint(0, input_size_w - self.crop_size_w)
-            y_start = random.randint(0, input_size_h - self.crop_size_h)
-            inputs = inputs[y_start: y_start + self.crop_size_h, x_start: x_start + self.crop_size_w] 
-            target = target[y_start: y_start + self.crop_size_h, x_start: x_start + self.crop_size_w] 
-        except:
-            inputs=cv2.resize(inputs,(256,256))
-            target=cv2.resize(target,(256,256))
-
-        return inputs,target
 
 class ImageDataset(Dataset):
     def __init__(
@@ -179,70 +159,3 @@ class ImageDataset(Dataset):
         
 
         return arr1, out_dict  
-        
-
-
-
-def center_crop_arr(pil_image, pil_image1, image_size):
-    # We are not on a new enough PIL to support the `reducing_gap`
-    # argument, which uses BOX downsampling at powers of two first.
-    # Thus, we do it by hand to improve downsample quality.
-    while min(*pil_image.size) >= 2 * image_size:
-        pil_image = pil_image.resize(
-            tuple(x // 2 for x in pil_image.size), resample=Image.BOX
-        )
-
-    scale = image_size / min(*pil_image.size)
-    pil_image = pil_image.resize(
-        tuple(round(x * scale) for x in pil_image.size), resample=Image.BICUBIC
-    )
-    while min(*pil_image1.size) >= 2 * image_size:
-        pil_image1 = pil_image1.resize(
-            tuple(x // 2 for x in pil_image.size), resample=Image.BOX
-        )
-
-    scale = image_size / min(*pil_image1.size)
-    pil_image1 = pil_image1.resize(
-        tuple(round(x * scale) for x in pil_image1.size), resample=Image.BICUBIC
-    )
-
-    arr = np.array(pil_image)
-    arr1 = np.array(pil_image1)
-
-    crop_y = (arr.shape[0] - image_size) // 2
-    crop_x = (arr.shape[1] - image_size) // 2
-    return arr[crop_y : crop_y + image_size, crop_x : crop_x + image_size],arr1[crop_y : crop_y + image_size, crop_x : crop_x + image_size]
-
-
-def random_crop_arr(pil_image, pil_image1, image_size, min_crop_frac=0.8, max_crop_frac=1.0):
-    min_smaller_dim_size = math.ceil(image_size / max_crop_frac)
-    max_smaller_dim_size = math.ceil(image_size / min_crop_frac)
-    smaller_dim_size = random.randrange(min_smaller_dim_size, max_smaller_dim_size + 1)
-
-    # We are not on a new enough PIL to support the `reducing_gap`
-    # argument, which uses BOX downsampling at powers of two first.
-    # Thus, we do it by hand to improve downsample quality.
-    while min(*pil_image.size) >= 2 * smaller_dim_size:
-        pil_image = pil_image.resize(
-            tuple(x // 2 for x in pil_image.size), resample=Image.BOX
-        )
-
-    scale = smaller_dim_size / min(*pil_image.size)
-    pil_image = pil_image.resize(
-        tuple(round(x * scale) for x in pil_image.size), resample=Image.BICUBIC
-    )
-    while min(*pil_image1.size) >= 2 * smaller_dim_size:
-        pil_image = pil_image.resize(
-            tuple(x // 2 for x in pil_image1.size), resample=Image.BOX
-        )
-
-    scale = smaller_dim_size / min(*pil_image1.size)
-    pil_image1 = pil_image1.resize(
-        tuple(round(x * scale) for x in pil_image1.size), resample=Image.BICUBIC
-    )
-    arr = np.array(pil_image)
-    arr1 = np.array(pil_image1)
-
-    crop_y = random.randrange(arr.shape[0] - image_size + 1)
-    crop_x = random.randrange(arr.shape[1] - image_size + 1)
-    return arr[crop_y : crop_y + image_size, crop_x : crop_x + image_size],arr1[crop_y : crop_y + image_size, crop_x : crop_x + image_size]

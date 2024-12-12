@@ -17,9 +17,6 @@ import math
 
 INITIAL_LOG_LOSS_SCALE = 20.0
 
-import core.metrics as Metrics
-import wandb
-
 class TrainLoop:
     def __init__(
         self,
