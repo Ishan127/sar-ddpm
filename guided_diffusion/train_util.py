@@ -129,8 +129,7 @@ class TrainLoop:
         ):
             batch, cond = next(self.data)
             self.run_step(batch, cond)
-            if self.step%5==0:
-                print('step',self.step)
+            print('step',self.step+1)
 
             if (self.step+1) % self.save_interval == 0:
                 number=0
