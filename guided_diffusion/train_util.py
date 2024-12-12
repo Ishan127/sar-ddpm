@@ -121,6 +121,7 @@ class TrainLoop:
     def run_loop(self):
         val_idx=0
         best_psnr = 0
+        c = 0
 
         while (
             not self.lr_anneal_steps
