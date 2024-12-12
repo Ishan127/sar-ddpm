@@ -28,9 +28,9 @@ from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import structural_similarity as ssim
 
 
-val_dir = '//Users/vishrutgrover/coding/SARDespeckling/sixfourhehe/test'
-base_path = '/Users/vishrutgrover/coding/SARDespeckling/finalsixfour'
-resume_checkpoint_clean = '/Users/vishrutgrover/coding/SARDespeckling/SAR_DDPM/weights/64_256_upsampler.pt'
+val_dir = r'/content/data/twofivesixx/test'
+base_path = r'/content/data'
+resume_checkpoint_clean = ''
 
 
 def main():

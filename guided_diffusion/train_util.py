@@ -15,7 +15,7 @@ import skimage
 from skimage.metrics import peak_signal_noise_ratio as psnr
 import math
 
-INITIAL_LOG_LOSS_SCALE = 20.0
+INITIAL_LOG_LOSS_SCALE = 15.0
 
 class TrainLoop:
     def __init__(
@@ -134,6 +134,9 @@ class TrainLoop:
                 print('validation')
                 
                 with th.no_grad():
+                        c += 1
+                        if c == 5:
+                            break
                         val_idx=val_idx+1
                         psnr_val = 0
                         for batch_id1, data_var in enumerate(self.val_data):
