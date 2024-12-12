@@ -138,6 +138,7 @@ class TrainLoop:
                         
                         val_idx=val_idx+1
                         psnr_val = 0
+                        c=0
                         for batch_id1, data_var in enumerate(self.val_data):
                             c += 1
                             if c == 5:
