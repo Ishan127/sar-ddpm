@@ -173,16 +173,14 @@ class TrainLoop:
                             clean_image = clean_image[0][:,:,::-1]
                             sample = sample[0][:,:,::-1]
 
-                            # Plot the images before PSNR calculation
+                            # Plotting code ~ Vishrut
                             plt.figure(figsize=(10, 5))
 
-                            # Plot clean_image
                             plt.subplot(1, 2, 1)
                             plt.imshow(cv2.cvtColor(clean_image, cv2.COLOR_BGR2RGB))
                             plt.title("Clean Image")
                             plt.axis('off')
 
-                            # Plot sample image
                             plt.subplot(1, 2, 2)
                             plt.imshow(cv2.cvtColor(sample, cv2.COLOR_BGR2RGB))
                             plt.title("Sample Image")
