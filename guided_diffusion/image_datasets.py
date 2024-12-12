@@ -57,8 +57,8 @@ def load_data(
         all_files,
         gt_dir,
         classes=classes,
-        shard=MPI.COMM_WORLD.Get_rank(),
-        num_shards=MPI.COMM_WORLD.Get_size(),
+        shard=0,
+        num_shards=4,
         random_crop=random_crop,
         random_flip=random_flip,
     )
