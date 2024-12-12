@@ -21,11 +21,11 @@ import torch
 # from train_dataset import TrainData
 from scripts.valdata import  ValData, ValDataNew
 
-train_dir = r'C:\Users\Ishan\Downloads\Vishrut_SAR_DDPM\Vishrut_SAR_DDPM\twofivesixx\train'
+train_dir = r'/content/data/twofivesixx/train'
    
-val_dir = r'C:\Users\Ishan\Downloads\Vishrut_SAR_DDPM\Vishrut_SAR_DDPM\twofivesixx\val'
+val_dir = r'/content/data/twofivesixx/val'
 
-pretrained_weight_path = 'C:\\Users\\Ishan\\Downloads\\Vishrut_SAR_DDPM\\Vishrut_SAR_DDPM\\SAR_DDPM\\weights\\64_256_upsampler.pt'
+pretrained_weight_path = r'/content/data/weights/64_256_upsampler.pt'
 
 
 def main():
