@@ -28,49 +28,37 @@ from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import structural_similarity as ssim
 
 
-val_dir = r'/content/data/twofivesixx/test'
-base_path = r'/content/data'
-resume_checkpoint_clean = ''
+val_dir = r'/content/resized_patches/resized_patches'
+base_path = r'/content/resized_patches/pred'
+resume_checkpoint_clean = r'/content/weights/model000049.pt'
 
 
 def main():
     args = create_argparser().parse_args()
 
     print(args)
-
     
     model_clean, diffusion = sr_create_model_and_diffusion(
         **args_to_dict(args, sr_model_and_diffusion_defaults().keys())
     )
 
-    
-    print(torch.device('mps'))
-    
     schedule_sampler = create_named_schedule_sampler(args.schedule_sampler, diffusion)
-
 
     val_data = DataLoader(ValDataNewReal(dataset_path=val_dir), batch_size=1, shuffle=False, num_workers=1)  #load_superres_dataval()
 
-    device0 = torch.device("mps")
+    device = torch.device("cuda")
     
-    model_clean.load_state_dict(torch.load(resume_checkpoint_clean, map_location="mps"))
+    model_clean.load_state_dict(torch.load(resume_checkpoint_clean, map_location="cuda"))
 
-    
-    model_clean.to(device0)
-
-    
-    
+    model_clean.to(device)
     
     params =  list(model_clean.parameters())
 
     print('model clean device:')
     print(next(model_clean.parameters()).device)
 
-    
-
     with torch.no_grad(): 
         number = 0
-        
 
         for batch_id1, data_var in enumerate(val_data):
             number = number+1 
@@ -81,13 +69,12 @@ def main():
             count = 0
             [t1,t2,max_r,max_c] = single_img.size()
             
-            N =9
+            N = 9
             
             val_inputv = single_img.clone()
             
             for row in range(0,max_r,100):
                 for col in range(0,max_c,100):
-                    
                     
                     val_inputv[:,:,:row,:col] = single_img[:,:,max_r-row:,max_c-col:]
                     val_inputv[:,:,row:,col:] = single_img[:,:,:max_r-row,:max_c-col]
@@ -103,16 +90,12 @@ def main():
                         else:
                             model_kwargs[k]= v.to(dist_util.dev())
 
-                    
-
                     sample = diffusion.p_sample_loop(
                                     model_clean,
                                     (clean_batch.shape[0], 3, 256,256),
                                     clip_denoised=True,
                                     model_kwargs=model_kwargs,
                                 )
-
-                
 
                     if count==0:
                         sample_new = (1.0/N)*sample
@@ -133,11 +116,6 @@ def main():
             sample_new = cv2.cvtColor(sample_new, cv2.COLOR_BGR2GRAY)
             print(img_name[0])
             cv2.imwrite(base_path+'pred_'+img_name[0],sample_new)
-
-                
-
-
-
 
 def create_argparser():
     defaults = dict(
