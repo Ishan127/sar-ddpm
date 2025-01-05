@@ -36,7 +36,7 @@ resume_checkpoint_clean = r'/content/weights/model000049.pt'
 def main():
     args = create_argparser().parse_args()
     print(args)
-    
+
     model_clean, diffusion = sr_create_model_and_diffusion(
         **args_to_dict(args, sr_model_and_diffusion_defaults().keys())
     )
@@ -49,7 +49,7 @@ def main():
     model_clean.to(device)
 
     if args.use_fp16:
-        model_clean.half()
+        model_clean.half()  # Convert the model to FP16
 
     print('Model clean device:', next(model_clean.parameters()).device)
 
@@ -60,10 +60,14 @@ def main():
             number += 1
             clean_batch, model_kwargs1 = data_var
 
-            single_img = model_kwargs1['SR'].to(dist_util.dev()).half() if args.use_fp16 else model_kwargs1['SR'].to(dist_util.dev())
+            # Ensure input tensor is of the same dtype as model
+            single_img = model_kwargs1['SR'].to(dist_util.dev())
+            if args.use_fp16:
+                single_img = single_img.half()  # Convert to FP16 if enabled
+
             count = 0
             [t1, t2, max_r, max_c] = single_img.size()
-            
+
             N = 9
             val_inputv = single_img.clone().half() if args.use_fp16 else single_img.clone()
 
