@@ -53,7 +53,7 @@ def main():
     model_clean.to(device)
     
     if args.use_fp16:
-        model_clean.half()  # Convert model to FP16
+        model_clean.float()
 
     params =  list(model_clean.parameters())
 
