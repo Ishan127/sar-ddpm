@@ -35,7 +35,6 @@ resume_checkpoint_clean = r'/content/weights/model000049.pt'
 
 def main():
     args = create_argparser().parse_args()
-
     print(args)
     
     model_clean, diffusion = sr_create_model_and_diffusion(
@@ -43,39 +42,33 @@ def main():
     )
 
     schedule_sampler = create_named_schedule_sampler(args.schedule_sampler, diffusion)
-
-    val_data = DataLoader(ValDataNewReal(dataset_path=val_dir), batch_size=1, shuffle=False, num_workers=1)  #load_superres_dataval()
+    val_data = DataLoader(ValDataNewReal(dataset_path=val_dir), batch_size=1, shuffle=False, num_workers=1)
 
     device = torch.device("cuda")
-    
     model_clean.load_state_dict(torch.load(resume_checkpoint_clean, map_location="cuda"))
-
     model_clean.to(device)
-    
-    params =  list(model_clean.parameters())
 
-    print('model clean device:')
-    print(next(model_clean.parameters()).device)
+    if args.use_fp16:
+        model_clean.half()
+
+    print('Model clean device:', next(model_clean.parameters()).device)
 
     with torch.no_grad(): 
         number = 0
 
         for batch_id1, data_var in enumerate(val_data):
-            number = number+1 
+            number += 1
             clean_batch, model_kwargs1 = data_var
 
-            single_img = model_kwargs1['SR'].to(dist_util.dev())
-
+            single_img = model_kwargs1['SR'].to(dist_util.dev()).half() if args.use_fp16 else model_kwargs1['SR'].to(dist_util.dev())
             count = 0
-            [t1,t2,max_r,max_c] = single_img.size()
+            [t1, t2, max_r, max_c] = single_img.size()
             
             N = 9
-            
-            val_inputv = single_img.clone()
-            
-            for row in range(0,max_r,100):
-                for col in range(0,max_c,100):
-                    
+            val_inputv = single_img.clone().half() if args.use_fp16 else single_img.clone()
+
+            for row in range(0, max_r, 100):
+                for col in range(0, max_c, 100):
                     val_inputv[:,:,:row,:col] = single_img[:,:,max_r-row:,max_c-col:]
                     val_inputv[:,:,row:,col:] = single_img[:,:,:max_r-row,:max_c-col]
                     val_inputv[:,:,row:,:col] = single_img[:,:,:max_r-row,max_c-col:]
@@ -83,39 +76,37 @@ def main():
 
                     model_kwargs = {}
                     for k, v in model_kwargs1.items():
-                        if('Index' in k):
-                            img_name=v
-                        elif('SR' in k):
-                            model_kwargs[k] = val_inputv.to(dist_util.dev())
+                        if 'Index' in k:
+                            img_name = v
+                        elif 'SR' in k:
+                            model_kwargs[k] = val_inputv.to(dist_util.dev()).half() if args.use_fp16 else val_inputv.to(dist_util.dev())
                         else:
-                            model_kwargs[k]= v.to(dist_util.dev())
+                            model_kwargs[k] = v.to(dist_util.dev()).half() if args.use_fp16 else v.to(dist_util.dev())
 
                     sample = diffusion.p_sample_loop(
                                     model_clean,
-                                    (clean_batch.shape[0], 3, 256,256),
+                                    (clean_batch.shape[0], 3, 256, 256),
                                     clip_denoised=True,
                                     model_kwargs=model_kwargs,
                                 )
 
-                    if count==0:
-                        sample_new = (1.0/N)*sample
-                    else : 
-                        sample_new[:,:,max_r-row:,max_c-col:] = sample_new[:,:,max_r-row:,max_c-col:] + (1.0/N)*sample[:,:,:row,:col]
-                        sample_new[:,:,:max_r-row,:max_c-col] = sample_new[:,:,:max_r-row,:max_c-col] + (1.0/N)*sample[:,:,row:,col:]
-                        sample_new[:,:,:max_r-row,max_c-col:] = sample_new[:,:,:max_r-row,max_c-col:] + (1.0/N)*sample[:,:,row:,:col]
-                        sample_new[:,:,max_r-row:,:max_c-col] = sample_new[:,:,max_r-row:,:max_c-col] + (1.0/N)*sample[:,:,:row,col:]
+                    sample = sample.float()  # Convert to FP32 for post-processing
+
+                    if count == 0:
+                        sample_new = (1.0 / N) * sample
+                    else:
+                        sample_new[:,:,max_r-row:,max_c-col:] += (1.0 / N) * sample[:,:,:row,:col]
+                        sample_new[:,:,:max_r-row,:max_c-col] += (1.0 / N) * sample[:,:,row:,col:]
+                        sample_new[:,:,:max_r-row,max_c-col:] += (1.0 / N) * sample[:,:,row:,:col]
+                        sample_new[:,:,max_r-row:,:max_c-col] += (1.0 / N) * sample[:,:,:row,col:]
                         
                     count += 1
             
-            sample_new = ((sample_new + 1) * 127.5)
-            sample_new = sample_new.clamp(0, 255).to(torch.uint8)
-            sample_new = sample_new.permute(0, 2, 3, 1)
-            sample_new = sample_new.contiguous().cpu().numpy()
-            sample_new = sample_new[0][:,:,::-1]
-            
+            sample_new = ((sample_new + 1) * 127.5).clamp(0, 255).to(torch.uint8)
+            sample_new = sample_new.permute(0, 2, 3, 1).contiguous().cpu().numpy()[0][:,:,::-1]
             sample_new = cv2.cvtColor(sample_new, cv2.COLOR_BGR2GRAY)
             print(img_name[0])
-            cv2.imwrite(base_path+'pred_'+img_name[0],sample_new)
+            cv2.imwrite(base_path + 'pred_' + img_name[0], sample_new)
 
 def create_argparser():
     defaults = dict(
@@ -127,10 +118,10 @@ def create_argparser():
         batch_size=2,
         microbatch=1,
         ema_rate="0.9999",
-        log_interval=100,
-        save_interval=200,
+        log_interval=5, #100 earlier
+        save_interval=10, #200 earlier
         use_fp16=False,
-        fp16_scale_growth=1e-3,
+        fp16_scale_growth=1e-3
     )
     defaults.update(sr_model_and_diffusion_defaults())
     parser = argparse.ArgumentParser()
