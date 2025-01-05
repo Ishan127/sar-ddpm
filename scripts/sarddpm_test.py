@@ -30,7 +30,7 @@ from skimage.metrics import structural_similarity as ssim
 
 val_dir = r'/content/resized_patches/resized_patches'
 base_path = r'/content/resized_patches/pred'
-resume_checkpoint_clean = r'/content/weights/model000049.pt'
+resume_checkpoint_clean = r'/content/weights/model000029.pt'
 
 
 def main():
@@ -51,9 +51,6 @@ def main():
     model_clean.load_state_dict(torch.load(resume_checkpoint_clean, map_location="cuda"))
 
     model_clean.to(device)
-    
-    if args.use_fp16:
-        model_clean.float()
 
     params =  list(model_clean.parameters())
 
