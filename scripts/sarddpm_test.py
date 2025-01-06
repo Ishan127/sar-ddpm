@@ -30,7 +30,7 @@ from skimage.metrics import structural_similarity as ssim
 
 val_dir = r'/content/resized_patches/resized_patches'
 base_path = r'/content/resized_patches/pred'
-resume_checkpoint_clean = r'/content/weights/model000029.pt'
+resume_checkpoint_clean = r'/content/ddpmtrainedmodel/ddpmtrainedmodel/model0000409.pt'
 
 
 def main():
