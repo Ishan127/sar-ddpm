@@ -263,7 +263,7 @@ class GaussianDiffusion:
 
         model_inp = th.cat([x,x_start],1)
         # model_inp = x
-        model_output = model(model_inp, self._scale_timesteps(t), **model_kwargs)
+        model_output = model(model_inp, self._scale_timesteps(t.long()), **model_kwargs)
 
         if self.model_var_type in [ModelVarType.LEARNED, ModelVarType.LEARNED_RANGE]:
             assert model_output.shape == (B, C * 2, *x.shape[2:])
@@ -449,6 +449,7 @@ class GaussianDiffusion:
             model_kwargs=model_kwargs,
             device = device,
         )
+
         # out = self.p_mean_variance(
         #     model,
         #     x,
