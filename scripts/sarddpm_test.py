@@ -51,6 +51,8 @@ def main():
     model_clean.load_state_dict(torch.load(resume_checkpoint_clean, map_location=device))
 
     model_clean.to(device)
+    if args.use_fp16:
+        model_clean.half()
 
     params =  list(model_clean.parameters())
 
@@ -72,6 +74,7 @@ def main():
             N = 9
             
             val_inputv = single_img.clone()
+
             
             for row in range(0,max_r,100):
                 for col in range(0,max_c,100):
@@ -90,6 +93,8 @@ def main():
                         else:
                             model_kwargs[k]= v.to(dist_util.dev())
 
+                    val_inputv = val_inputv.half() if args.use_fp16 else val_inputv.float()
+                    model_kwargs[k] = model_kwargs[k].half() if args.use_fp16 else model_kwargs[k].float()
                     sample = diffusion.p_sample_loop(
                                     model_clean,
                                     (clean_batch.shape[0], 3, 256,256),
