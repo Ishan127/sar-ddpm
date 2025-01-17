@@ -27,8 +27,6 @@ from scripts.valdata import  ValData, ValDataNew, ValDataNewReal
 from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import structural_similarity as ssim
 
-torch.set_default_tensor_type(torch.float32)
-
 val_dir = r'/content/resized_patches/resized_patches'
 base_path = r'/content/resized_patches/pred'
 resume_checkpoint_clean = r'/content/ddpmtrainedmodel/ddpmtrainedmodel/model000409.pt'
@@ -57,7 +55,6 @@ def main():
         model_clean.half()
     else:
         model_clean.float()
-
 
     params =  list(model_clean.parameters())
 
