@@ -46,9 +46,9 @@ def main():
 
     val_data = DataLoader(ValDataNewReal(dataset_path=val_dir), batch_size=1, shuffle=False, num_workers=1)  #load_superres_dataval()
 
-    device = torch.device("cuda")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    model_clean.load_state_dict(torch.load(resume_checkpoint_clean, map_location="cuda"))
+    model_clean.load_state_dict(torch.load(resume_checkpoint_clean, map_location=device))
 
     model_clean.to(device)
 
