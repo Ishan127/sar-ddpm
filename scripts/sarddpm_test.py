@@ -46,14 +46,11 @@ def main():
 
     val_data = DataLoader(ValDataNewReal(dataset_path=val_dir), batch_size=1, shuffle=False, num_workers=1)  #load_superres_dataval()
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    model_clean.load_state_dict(torch.load(resume_checkpoint_clean, map_location=device))
+    device = torch.device("cuda")
+    
+    model_clean.load_state_dict(torch.load(resume_checkpoint_clean, map_location="cuda"))
 
     model_clean.to(device)
-    if args.use_fp16:
-        print("model_clean half employed")
-        model_clean = model_clean.half() #added
 
     params =  list(model_clean.parameters())
 
@@ -75,8 +72,6 @@ def main():
             N = 9
             
             val_inputv = single_img.clone()
-            val_inputv = val_inputv.half() #added
-
             
             for row in range(0,max_r,100):
                 for col in range(0,max_c,100):

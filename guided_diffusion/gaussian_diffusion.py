@@ -254,8 +254,6 @@ class GaussianDiffusion:
                  - 'log_variance': the log of 'variance'.
                  - 'pred_xstart': the prediction for x_0.
         """
-
-
         if model_kwargs is None:
             model_kwargs = {}
 
@@ -265,7 +263,7 @@ class GaussianDiffusion:
 
         model_inp = th.cat([x,x_start],1)
         # model_inp = x
-        model_output = model(model_inp, self._scale_timesteps(t.long()), **model_kwargs)
+        model_output = model(model_inp, self._scale_timesteps(t), **model_kwargs)
 
         if self.model_var_type in [ModelVarType.LEARNED, ModelVarType.LEARNED_RANGE]:
             assert model_output.shape == (B, C * 2, *x.shape[2:])
@@ -428,9 +426,6 @@ class GaussianDiffusion:
                  - 'sample': a random sample from the model.
                  - 'pred_xstart': a prediction of x_0.
         """
-        x = x.half() if model.dtype == th.float16 else x
-        t = t.half() if model.dtype == th.float16 else t
-        model_kwargs["SR"] = model_kwargs["SR"].half() if model.dtype == th.float16 else model_kwargs["SR"]
 
         x_disto_start =  model_kwargs["SR"]
         
@@ -451,7 +446,6 @@ class GaussianDiffusion:
             model_kwargs=model_kwargs,
             device = device,
         )
-
         # out = self.p_mean_variance(
         #     model,
         #     x,
@@ -540,35 +534,21 @@ class GaussianDiffusion:
         if device is None:
             device = next(model.parameters()).device
         assert isinstance(shape, (tuple, list))
-        
-        # Initialize noise or random tensor for sampling
         if noise is not None:
             img = noise
         else:
             img = th.randn(*shape, device=device)
-        
-        # Adjust dtype of the image tensor to match the model's dtype
-        img = img.half() if next(model.parameters()).dtype == th.float16 else img.float()
-        
+            
         indices = list(range(self.num_timesteps))[::-1]
 
         if progress:
             # Lazy import so that we don't depend on tqdm.
             from tqdm.auto import tqdm
+
             indices = tqdm(indices)
 
         for i in indices:
             t = th.tensor([i] * shape[0], device=device)
-            
-            # Ensure `t` matches model's dtype
-            t = t.half() if next(model.parameters()).dtype == th.float16 else t.float()
-            
-            # Convert `model_kwargs` tensors to the correct dtype if applicable
-            if model_kwargs is not None:
-                for key, value in model_kwargs.items():
-                    if isinstance(value, th.Tensor):
-                        model_kwargs[key] = value.half() if next(model.parameters()).dtype == th.float16 else value.float()
-
             with th.no_grad():
                 out = self.p_sample(
                     model,
@@ -578,10 +558,11 @@ class GaussianDiffusion:
                     denoised_fn=denoised_fn,
                     cond_fn=cond_fn,
                     model_kwargs=model_kwargs,
-                    device=device,
+                    device = device,
                 )
                 yield out
                 img = out["sample"]
+
 
     def ddim_sample(
         self,
