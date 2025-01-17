@@ -254,6 +254,8 @@ class GaussianDiffusion:
                  - 'log_variance': the log of 'variance'.
                  - 'pred_xstart': the prediction for x_0.
         """
+
+
         if model_kwargs is None:
             model_kwargs = {}
 
@@ -538,25 +540,34 @@ class GaussianDiffusion:
         if device is None:
             device = next(model.parameters()).device
         assert isinstance(shape, (tuple, list))
+        
+        # Initialize noise or random tensor for sampling
         if noise is not None:
             img = noise
         else:
             img = th.randn(*shape, device=device)
-            
+        
+        # Adjust dtype of the image tensor to match the model's dtype
+        img = img.half() if next(model.parameters()).dtype == th.float16 else img.float()
+        
         indices = list(range(self.num_timesteps))[::-1]
 
         if progress:
             # Lazy import so that we don't depend on tqdm.
             from tqdm.auto import tqdm
-
             indices = tqdm(indices)
 
         for i in indices:
             t = th.tensor([i] * shape[0], device=device)
-
-            # x = x.half() if model.dtype == torch.float16 else x
-            # t = t.half() if model.dtype == torch.float16 else t
-            # model_kwargs["SR"] = model_kwargs["SR"].half() if model.dtype == torch.float16 else model_kwargs["SR"]
+            
+            # Ensure `t` matches model's dtype
+            t = t.half() if next(model.parameters()).dtype == th.float16 else t.float()
+            
+            # Convert `model_kwargs` tensors to the correct dtype if applicable
+            if model_kwargs is not None:
+                for key, value in model_kwargs.items():
+                    if isinstance(value, th.Tensor):
+                        model_kwargs[key] = value.half() if next(model.parameters()).dtype == th.float16 else value.float()
 
             with th.no_grad():
                 out = self.p_sample(
@@ -567,11 +578,10 @@ class GaussianDiffusion:
                     denoised_fn=denoised_fn,
                     cond_fn=cond_fn,
                     model_kwargs=model_kwargs,
-                    device = device,
+                    device=device,
                 )
                 yield out
                 img = out["sample"]
-
 
     def ddim_sample(
         self,
