@@ -89,7 +89,7 @@ def main():
                     model_kwargs = {}
                     val_inputv = val_inputv.half() if args.use_fp16 else val_inputv.float()
                     for k, v in model_kwargs1.items():
-                        print(k, v)
+                        print(k, v) # TO REMOVE
                         if "Index" in k:
                             img_name = v
                         elif "SR" in k:
@@ -121,7 +121,7 @@ def main():
             sample_new = ((sample_new + 1) * 127.5)
             sample_new = sample_new.clamp(0, 255).to(torch.uint8)
             sample_new = sample_new.permute(0, 2, 3, 1)
-            sample_new = sample_new.contiguous().cpu().numpy()
+            sample_new = sample_new.contiguous().cpu().numpy() # might have to put to CUDAs
             sample_new = sample_new[0][:,:,::-1]
             
             sample_new = cv2.cvtColor(sample_new, cv2.COLOR_BGR2GRAY)
