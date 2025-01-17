@@ -91,9 +91,10 @@ def main():
                     model_kwargs = {}
                     val_inputv = val_inputv.half() if args.use_fp16 else val_inputv.float()
                     for k, v in model_kwargs1.items():
-                        if 'Index' in k:
+                        print(k, v)
+                        if "Index" in k:
                             img_name = v
-                        elif 'SR' in k:
+                        elif "SR" in k:
                             model_kwargs[k] = val_inputv
                         else:
                             model_kwargs[k] = v.half() if args.use_fp16 else v.float()
