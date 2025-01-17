@@ -1165,7 +1165,9 @@ class EncoderUNetModel(nn.Module):
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
 
         results = []
-        h = x.to(th.float16)
+        h = x.type(th.cuda.HalfTensor)
+        
+        # h = x.to(torch.float16)
 
         for module in self.input_blocks:
             h = module(h, emb)
