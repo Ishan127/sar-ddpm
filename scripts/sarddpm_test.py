@@ -27,7 +27,7 @@ from scripts.valdata import  ValData, ValDataNew, ValDataNewReal
 from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import structural_similarity as ssim
 
-torch.set_default_tensor_type(torch.float16)
+torch.set_default_tensor_type(torch.float32)
 
 val_dir = r'/content/resized_patches/resized_patches'
 base_path = r'/content/resized_patches/pred'
