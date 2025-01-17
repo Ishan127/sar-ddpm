@@ -426,8 +426,8 @@ class GaussianDiffusion:
                  - 'sample': a random sample from the model.
                  - 'pred_xstart': a prediction of x_0.
         """
-        x = x.half() if model.dtype == torch.float16 else x
-        t = t.half() if model.dtype == torch.float16 else t
+        x = x.half() if model.dtype == th.float16 else x
+        t = t.half() if model.dtype == th.float16 else t
         model_kwargs["SR"] = model_kwargs["SR"].half() if model.dtype == torch.float16 else model_kwargs["SR"]
 
         x_disto_start =  model_kwargs["SR"]
