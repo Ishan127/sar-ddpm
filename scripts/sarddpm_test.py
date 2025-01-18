@@ -106,6 +106,8 @@ def main():
                             model_kwargs=model_kwargs,
                         )
 
+                    print(sample.shape)
+
                     if args.use_fp16:
                         sample = sample.half()
                     else:
@@ -120,16 +122,17 @@ def main():
                         sample_new[:,:,max_r-row:,:max_c-col] = sample_new[:,:,max_r-row:,:max_c-col] + (1.0/N)*sample[:,:,:row,col:]
                         
                     count += 1
-            
+            print(sample_new.shape)
             sample_new = ((sample_new + 1) * 127.5)
             sample_new = sample_new.clamp(0, 255).to(torch.uint8)
             sample_new = sample_new.permute(0, 2, 3, 1)
             sample_new = sample_new.contiguous().cpu().numpy() # might have to put to CUDAs
-            sample_new = sample_new[0][:,:,::-1]
             
-            sample_new = cv2.cvtColor(sample_new, cv2.COLOR_BGR2GRAY)
-            print(img_name[0])
-            cv2.imwrite(base_path+'pred_'+img_name[0],sample_new)
+            for i in range(sample_new.shape[0]):
+                snew = sample_new[i][:,:,::-1]
+                snew = cv2.cvtColor(snew, cv2.COLOR_BGR2GRAY)
+                print(img_name[i])
+                cv2.imwrite(base_path+'pred_'+img_name[i],snew)
 
 def create_argparser():
     defaults = dict(
