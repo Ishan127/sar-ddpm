@@ -265,16 +265,20 @@ class ValDataNew(data.Dataset):
 #         return arr1, {'SR': arr2, 'HR': arr1 , 'Index': image_filename}
     
 class ValDataNewReal(data.Dataset):
-    def __init__(self, dataset_path, output_path, crop_size=[256, 256]):
+    def __init__(self, dataset_path, crop_size=[256, 256], output_path=None):
         super().__init__()
 
         self.noisy_path = dataset_path
         self.clean_path = dataset_path
         self.output_path = output_path
-        self.images_list = [
-            img for img in os.listdir(self.noisy_path)
-            if img.endswith('.png') and not os.path.exists(os.path.join(self.output_path, f"predpred_{img}"))
-        ]
+        if self.output_path:
+            self.images_list = [
+                img for img in os.listdir(self.noisy_path)
+                if img.endswith('.png') and not os.path.exists(os.path.join(self.output_path, f"pred_{img}"))
+            ]
+        else:
+            self.images_list = os.listdir(self.noisy_path)
+
         self.crop_size = crop_size
 
     def __len__(self):
