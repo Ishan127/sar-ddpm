@@ -102,6 +102,8 @@ def main():
                             (clean_batch.shape[0], 3, 256, 256),
                             clip_denoised=True,
                             model_kwargs=model_kwargs,
+                            device=device,
+                            progress=True,
                         )
 
                     if args.use_fp16:
