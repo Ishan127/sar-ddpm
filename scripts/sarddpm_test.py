@@ -91,12 +91,14 @@ def main():
                         else:
                             model_kwargs[k] = v.half() if args.use_fp16 else v.float()
 
-                    with torch.cuda.amp.autocast(enabled=args.use_fp16):  # Apply autocast here
+                    with torch.amp.autocast(device_type='cuda', enabled=args.use_fp16):  # Apply autocast here
                         sample = diffusion.p_sample_loop(
                             model_clean,
                             (clean_batch.shape[0], 3, 256, 256),
                             clip_denoised=True,
                             model_kwargs=model_kwargs,
+                            device=device,
+                            progress=True
                         )
 
                     if count == 0:
