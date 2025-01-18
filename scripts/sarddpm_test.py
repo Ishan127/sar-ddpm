@@ -69,8 +69,6 @@ def main():
             clean_batch, model_kwargs1 = data_var
 
             single_img = model_kwargs1['SR'].to(dist_util.dev())
-            print(clean_batch, model_kwargs1)
-            print(single_img.size())
 
             count = 0
             [t1,t2,max_r,max_c] = single_img.size()
@@ -106,8 +104,6 @@ def main():
                             model_kwargs=model_kwargs,
                         )
 
-                    print(sample.shape)
-
                     if args.use_fp16:
                         sample = sample.half()
                     else:
@@ -122,7 +118,7 @@ def main():
                         sample_new[:,:,max_r-row:,:max_c-col] = sample_new[:,:,max_r-row:,:max_c-col] + (1.0/N)*sample[:,:,:row,col:]
                         
                     count += 1
-            print(sample_new.shape)
+
             sample_new = ((sample_new + 1) * 127.5)
             sample_new = sample_new.clamp(0, 255).to(torch.uint8)
             sample_new = sample_new.permute(0, 2, 3, 1)
