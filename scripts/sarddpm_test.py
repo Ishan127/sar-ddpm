@@ -43,7 +43,7 @@ def main():
 
     schedule_sampler = create_named_schedule_sampler(args.schedule_sampler, diffusion)
 
-    val_data = DataLoader(ValDataNewReal(dataset_path=val_dir), batch_size=128, shuffle=False, num_workers=512)  #load_superres_dataval()
+    val_data = DataLoader(ValDataNewReal(dataset_path=val_dir), batch_size=64, shuffle=False, num_workers=512)  #load_superres_dataval()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
