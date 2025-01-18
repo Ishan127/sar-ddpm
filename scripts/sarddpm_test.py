@@ -43,20 +43,17 @@ def main():
 
     schedule_sampler = create_named_schedule_sampler(args.schedule_sampler, diffusion)
 
-    val_data = DataLoader(ValDataNewReal(dataset_path=val_dir), batch_size=1, shuffle=False, num_workers=1)  #load_superres_dataval()
+    val_data = DataLoader(ValDataNewReal(dataset_path=val_dir), batch_size=1, shuffle=False, num_workers=1)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     model_clean.load_state_dict(torch.load(resume_checkpoint_clean, map_location=device))
-
     model_clean.to(device)
 
     if args.use_fp16:
         model_clean.half()
     else:
         model_clean.float()
-
-    params =  list(model_clean.parameters())
 
     print('model clean device:')
     print(next(model_clean.parameters()).device)
@@ -65,22 +62,19 @@ def main():
         number = 0
 
         for batch_id1, data_var in enumerate(val_data):
-            number = number+1 
+            number += 1
             clean_batch, model_kwargs1 = data_var
 
             single_img = model_kwargs1['SR'].to(dist_util.dev())
 
             count = 0
-            [t1,t2,max_r,max_c] = single_img.size()
+            [t1, t2, max_r, max_c] = single_img.size()
             
             N = 9
-            
             val_inputv = single_img.clone()
 
-            
-            for row in range(0,max_r,100):
-                for col in range(0,max_c,100):
-                    
+            for row in range(0, max_r, 100):
+                for col in range(0, max_c, 100):
                     val_inputv[:,:,:row,:col] = single_img[:,:,max_r-row:,max_c-col:]
                     val_inputv[:,:,row:,col:] = single_img[:,:,:max_r-row,:max_c-col]
                     val_inputv[:,:,row:,:col] = single_img[:,:,:max_r-row,max_c-col:]
@@ -88,8 +82,8 @@ def main():
 
                     model_kwargs = {}
                     val_inputv = val_inputv.half() if args.use_fp16 else val_inputv.float()
+
                     for k, v in model_kwargs1.items():
-                        print(k, v) # TO REMOVE
                         if "Index" in k:
                             img_name = v
                         elif "SR" in k:
@@ -97,36 +91,33 @@ def main():
                         else:
                             model_kwargs[k] = v.half() if args.use_fp16 else v.float()
 
-                    sample = diffusion.p_sample_loop(
-                        model_clean,
-                        (clean_batch.shape[0], 3, 256, 256),
-                        clip_denoised=True,
-                        model_kwargs=model_kwargs,
-                    )
-                    if args.use_fp16:
-                        sample = sample.half()
-                    else:
-                        sample = sample.float()
+                    with torch.cuda.amp.autocast(enabled=args.use_fp16):  # Apply autocast here
+                        sample = diffusion.p_sample_loop(
+                            model_clean,
+                            (clean_batch.shape[0], 3, 256, 256),
+                            clip_denoised=True,
+                            model_kwargs=model_kwargs,
+                        )
 
-                    if count==0:
-                        sample_new = (1.0/N)*sample
-                    else : 
-                        sample_new[:,:,max_r-row:,max_c-col:] = sample_new[:,:,max_r-row:,max_c-col:] + (1.0/N)*sample[:,:,:row,:col]
-                        sample_new[:,:,:max_r-row,:max_c-col] = sample_new[:,:,:max_r-row,:max_c-col] + (1.0/N)*sample[:,:,row:,col:]
-                        sample_new[:,:,:max_r-row,max_c-col:] = sample_new[:,:,:max_r-row,max_c-col:] + (1.0/N)*sample[:,:,row:,:col]
-                        sample_new[:,:,max_r-row:,:max_c-col] = sample_new[:,:,max_r-row:,:max_c-col] + (1.0/N)*sample[:,:,:row,col:]
-                        
+                    if count == 0:
+                        sample_new = (1.0 / N) * sample
+                    else:
+                        sample_new[:,:,max_r-row:,max_c-col:] += (1.0 / N) * sample[:,:,:row,:col]
+                        sample_new[:,:,:max_r-row,:max_c-col] += (1.0 / N) * sample[:,:,row:,col:]
+                        sample_new[:,:,:max_r-row,max_c-col:] += (1.0 / N) * sample[:,:,row:,:col]
+                        sample_new[:,:,max_r-row:,:max_c-col] += (1.0 / N) * sample[:,:,:row,col:]
+
                     count += 1
-            
+
             sample_new = ((sample_new + 1) * 127.5)
             sample_new = sample_new.clamp(0, 255).to(torch.uint8)
             sample_new = sample_new.permute(0, 2, 3, 1)
-            sample_new = sample_new.contiguous().cpu().numpy() # might have to put to CUDAs
+            sample_new = sample_new.contiguous().cpu().numpy()
             sample_new = sample_new[0][:,:,::-1]
-            
+
             sample_new = cv2.cvtColor(sample_new, cv2.COLOR_BGR2GRAY)
             print(img_name[0])
-            cv2.imwrite(base_path+'pred_'+img_name[0],sample_new)
+            cv2.imwrite(base_path + 'pred_' + img_name[0], sample_new)
 
 def create_argparser():
     defaults = dict(
