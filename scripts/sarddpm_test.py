@@ -43,7 +43,7 @@ def main():
 
     schedule_sampler = create_named_schedule_sampler(args.schedule_sampler, diffusion)
 
-    val_data = DataLoader(ValDataNewReal(dataset_path=val_dir), batch_size=64, shuffle=False, num_workers=1)
+    val_data = DataLoader(ValDataNewReal(dataset_path=val_dir), batch_size=64, shuffle=False, num_workers=-1)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
@@ -73,43 +73,43 @@ def main():
             N = 9
             val_inputv = single_img.clone()
 
-            for row in range(0, max_r, 100):
-                for col in range(0, max_c, 100):
-                    val_inputv[:,:,:row,:col] = single_img[:,:,max_r-row:,max_c-col:]
-                    val_inputv[:,:,row:,col:] = single_img[:,:,:max_r-row,:max_c-col]
-                    val_inputv[:,:,row:,:col] = single_img[:,:,:max_r-row,max_c-col:]
-                    val_inputv[:,:,:row,col:] = single_img[:,:,max_r-row:,:max_c-col]
+            # for row in range(0, max_r, 100):
+            #     for col in range(0, max_c, 100):
+            #         val_inputv[:,:,:row,:col] = single_img[:,:,max_r-row:,max_c-col:]
+            #         val_inputv[:,:,row:,col:] = single_img[:,:,:max_r-row,:max_c-col]
+            #         val_inputv[:,:,row:,:col] = single_img[:,:,:max_r-row,max_c-col:]
+            #         val_inputv[:,:,:row,col:] = single_img[:,:,max_r-row:,:max_c-col]
 
-                    model_kwargs = {}
-                    val_inputv = val_inputv.half() if args.use_fp16 else val_inputv.float()
+            model_kwargs = {}
+            val_inputv = val_inputv.half() if args.use_fp16 else val_inputv.float()
 
-                    for k, v in model_kwargs1.items():
-                        if "Index" in k:
-                            img_name = v
-                        elif "SR" in k:
-                            model_kwargs[k] = val_inputv
-                        else:
-                            model_kwargs[k] = v.half() if args.use_fp16 else v.float()
+            for k, v in model_kwargs1.items():
+                if "Index" in k:
+                    img_name = v
+                elif "SR" in k:
+                    model_kwargs[k] = val_inputv
+                else:
+                    model_kwargs[k] = v.half() if args.use_fp16 else v.float()
 
-                    with torch.amp.autocast(device_type='cuda', enabled=args.use_fp16):  # Apply autocast here
-                        sample = diffusion.p_sample_loop(
-                            model_clean,
-                            (clean_batch.shape[0], 3, 256, 256),
-                            clip_denoised=True,
-                            model_kwargs=model_kwargs,
-                            device=device,
-                            progress=True
-                        )
+            with torch.amp.autocast(device_type='cuda', enabled=args.use_fp16):  # Apply autocast here
+                sample = diffusion.p_sample_loop(
+                    model_clean,
+                    (clean_batch.shape[0], 3, 256, 256),
+                    clip_denoised=True,
+                    model_kwargs=model_kwargs,
+                    device=device,
+                    progress=True
+                )
 
-                    if count == 0:
-                        sample_new = (1.0 / N) * sample
-                    else:
-                        sample_new[:,:,max_r-row:,max_c-col:] += (1.0 / N) * sample[:,:,:row,:col]
-                        sample_new[:,:,:max_r-row,:max_c-col] += (1.0 / N) * sample[:,:,row:,col:]
-                        sample_new[:,:,:max_r-row,max_c-col:] += (1.0 / N) * sample[:,:,row:,:col]
-                        sample_new[:,:,max_r-row:,:max_c-col] += (1.0 / N) * sample[:,:,:row,col:]
+            if count == 0:
+                sample_new = (1.0 / N) * sample
+                    # else:
+                    #     sample_new[:,:,max_r-row:,max_c-col:] += (1.0 / N) * sample[:,:,:row,:col]
+                    #     sample_new[:,:,:max_r-row,:max_c-col] += (1.0 / N) * sample[:,:,row:,col:]
+                    #     sample_new[:,:,:max_r-row,max_c-col:] += (1.0 / N) * sample[:,:,row:,:col]
+                    #     sample_new[:,:,max_r-row:,:max_c-col] += (1.0 / N) * sample[:,:,:row,col:]
 
-                    count += 1
+                    # count += 1
 
             sample_new = ((sample_new + 1) * 127.5)
             sample_new = sample_new.clamp(0, 255).to(torch.uint8)
