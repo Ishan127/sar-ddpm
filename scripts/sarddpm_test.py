@@ -78,50 +78,50 @@ def main():
             val_inputv = single_img.clone()
 
             
-            for row in range(0,max_r,100):
-                for col in range(0,max_c,100):
+            # for row in range(0,max_r,100):
+            #     for col in range(0,max_c,100):
                     
-                    val_inputv[:,:,:row,:col] = single_img[:,:,max_r-row:,max_c-col:]
-                    val_inputv[:,:,row:,col:] = single_img[:,:,:max_r-row,:max_c-col]
-                    val_inputv[:,:,row:,:col] = single_img[:,:,:max_r-row,max_c-col:]
-                    val_inputv[:,:,:row,col:] = single_img[:,:,max_r-row:,:max_c-col]
+            #         val_inputv[:,:,:row,:col] = single_img[:,:,max_r-row:,max_c-col:]
+            #         val_inputv[:,:,row:,col:] = single_img[:,:,:max_r-row,:max_c-col]
+            #         val_inputv[:,:,row:,:col] = single_img[:,:,:max_r-row,max_c-col:]
+            #         val_inputv[:,:,:row,col:] = single_img[:,:,max_r-row:,:max_c-col]
 
-                    model_kwargs = {}
-                    val_inputv = val_inputv.half() if args.use_fp16 else val_inputv.float()
-                    for k, v in model_kwargs1.items():
-                        if "Index" in k:
-                            img_name = v
-                        elif "SR" in k:
-                            model_kwargs[k] = val_inputv
-                        else:
-                            model_kwargs[k] = v.half() if args.use_fp16 else v.float()
+            model_kwargs = {}
+            val_inputv = val_inputv.half() if args.use_fp16 else val_inputv.float()
+            for k, v in model_kwargs1.items():
+                if "Index" in k:
+                    img_name = v
+                elif "SR" in k:
+                    model_kwargs[k] = val_inputv
+                else:
+                    model_kwargs[k] = v.half() if args.use_fp16 else v.float()
 
-                    with torch.amp.autocast(device_type='cuda', enabled=args.use_fp16):  # Apply autocast here
-                        sample = diffusion.p_sample_loop(
-                            model_clean,
-                            (clean_batch.shape[0], 3, 256, 256),
-                            clip_denoised=True,
-                            model_kwargs=model_kwargs,
-                            device=device,
-                            progress=True,
-                        )
+            with torch.amp.autocast(device_type='cuda', enabled=args.use_fp16):  # Apply autocast here
+                sample = diffusion.p_sample_loop(
+                    model_clean,
+                    (clean_batch.shape[0], 3, 256, 256),
+                    clip_denoised=True,
+                    model_kwargs=model_kwargs,
+                    device=device,
+                    progress=True,
+                )
 
-                    if args.use_fp16:
-                        sample = sample.half()
-                    else:
-                        sample = sample.float()
+            if args.use_fp16:
+                sample = sample.half()
+            else:
+                sample = sample.float()
 
-                    if count==0:
-                        sample_new = (1.0/N)*sample
-                    else : 
-                        sample_new[:,:,max_r-row:,max_c-col:] = sample_new[:,:,max_r-row:,max_c-col:] + (1.0/N)*sample[:,:,:row,:col]
-                        sample_new[:,:,:max_r-row,:max_c-col] = sample_new[:,:,:max_r-row,:max_c-col] + (1.0/N)*sample[:,:,row:,col:]
-                        sample_new[:,:,:max_r-row,max_c-col:] = sample_new[:,:,:max_r-row,max_c-col:] + (1.0/N)*sample[:,:,row:,:col]
-                        sample_new[:,:,max_r-row:,:max_c-col] = sample_new[:,:,max_r-row:,:max_c-col] + (1.0/N)*sample[:,:,:row,col:]
+                    # if count==0:
+                    #     sample_new = (1.0/N)*sample
+                    # else : 
+                    #     sample_new[:,:,max_r-row:,max_c-col:] = sample_new[:,:,max_r-row:,max_c-col:] + (1.0/N)*sample[:,:,:row,:col]
+                    #     sample_new[:,:,:max_r-row,:max_c-col] = sample_new[:,:,:max_r-row,:max_c-col] + (1.0/N)*sample[:,:,row:,col:]
+                    #     sample_new[:,:,:max_r-row,max_c-col:] = sample_new[:,:,:max_r-row,max_c-col:] + (1.0/N)*sample[:,:,row:,:col]
+                    #     sample_new[:,:,max_r-row:,:max_c-col] = sample_new[:,:,max_r-row:,:max_c-col] + (1.0/N)*sample[:,:,:row,col:]
                         
-                    count += 1
+                    # count += 1
 
-            sample_new = ((sample_new + 1) * 127.5)
+            sample_new = ((sample + 1) * 127.5)
             sample_new = sample_new.clamp(0, 255).to(torch.uint8)
             sample_new = sample_new.permute(0, 2, 3, 1)
             sample_new = sample_new.contiguous().cpu().numpy() # might have to put to CUDAs
