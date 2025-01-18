@@ -27,7 +27,7 @@ from scripts.valdata import  ValData, ValDataNew, ValDataNewReal
 from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import structural_similarity as ssim
 
-val_dir = r'/content/resized_patches/resized_patches/paanchsobaara'
+val_dir = r'/content/resized_patches/resized_patches'
 base_path = r'/content/resized_patches/pred'
 resume_checkpoint_clean = r'/content/ddpmtrainedmodel/ddpmtrainedmodel/model000409.pt'
 
