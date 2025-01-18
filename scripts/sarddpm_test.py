@@ -128,7 +128,7 @@ def main():
             sample_new = sample_new[0][:,:,::-1]
             
             sample_new = cv2.cvtColor(sample_new, cv2.COLOR_BGR2GRAY)
-            print(img_name[0])
+            # print(img_name[0])
             cv2.imwrite(base_path+'pred_'+img_name[0],sample_new)
 
 def create_argparser():
